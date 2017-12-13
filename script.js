@@ -19,24 +19,16 @@ var mousPos;
 
 var p;
 
-function getMousePos(canvas, evt) {
-	let rect = canvas.getBoundingClientRect();
-	return {
-		x: evt.clientX - rect.left,
-		y: evt.clientY - rect.top
-	};
-}
-
 function clrScrn() {
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
 class Player {
-	constructor() {
+	constructor(xPos, yPos) {
 		this.isAlive = true;
 		this.position = {
-			x: canvasW/2, 
-			y: canvasH/2
+			x: xPos, 
+			y: yPos
 		}
 		this.speed = 50;
 		this.velocity = {
@@ -67,7 +59,11 @@ class Player {
 }
 
 function gameLoop() {
-	window.requestAnimationFrame(gameLoop);
+	if (p.isAlive) {
+		window.requestAnimationFrame(gameLoop);
+	} else {
+		endGame();
+	}
 
 	currentTime = (new Date()).getTime();
 	delta = (currentTime - lastTime) / 1000; 
@@ -79,16 +75,36 @@ function gameLoop() {
 	p.move(delta);
 }
 
+function getMousePos(canvas, evt) {
+	let rect = canvas.getBoundingClientRect();
+	return {
+		x: evt.clientX - rect.left,
+		y: evt.clientY - rect.top
+	};
+}
+
+function handleMouseMove (evt) {
+	mousePos = getMousePos(canvas, evt);
+	p.updateVelocity(mousePos);
+}
+
+function handleMouseDown (evt) {
+	p.isAlive = false;
+}
+
 function startGame() {
-	p = new Player();
-	canvas.addEventListener('mousemove', function(evt) {
-		mousePos = getMousePos(canvas, evt);
-		p.updateVelocity(mousePos);
-	}, false);
-	canvas.addEventListener('mousedown', function(evt) {
-		p.isAlive = false;
-	});
+	document.getElementById('start_button').style.display = 'none';
+	p = new Player(canvasW/2, canvasH/2);
+	canvas.addEventListener('mousemove', handleMouseMove, false);
+	canvas.addEventListener('mousedown', handleMouseDown);
 	if (typeof (canvas.getContext) !== undefined) {
 		gameLoop();
 	}
+}
+
+function endGame() {
+	canvas.removeEventListener('mousemove', handleMouseMove, false);
+	canvas.removeEventListener('mousedown', handleMouseDown);
+	delete mousePos;
+	document.getElementById('start_button').style.display = 'inline';
 }
