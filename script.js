@@ -19,6 +19,7 @@ var delta;
 var mousPos;
 
 var player;
+var missileArray;
 
 class Ship {
 	constructor(xPos, yPos, speed, turnSpeed, color) {
@@ -77,8 +78,10 @@ class Ship {
 		this.velocity.x += this.turnSpeed*this.acceleration.x*delta;
 		this.velocity.y += this.turnSpeed*this.acceleration.y*delta;
 		let vel = Math.sqrt(this.velocity.x*this.velocity.x + this.velocity.y*this.velocity.y);
-		this.velocity.x *= this.speed / vel;
-		this.velocity.y *= this.speed / vel;
+		if (vel !== 0) {
+			this.velocity.x *= this.speed / vel;
+			this.velocity.y *= this.speed / vel;
+		}
 	}
 	updatePosition(delta) {
 		this.position.x += this.speed*this.velocity.x*delta + 0.5*this.turnSpeed*this.acceleration.x*delta*delta;
@@ -89,7 +92,7 @@ class Ship {
 class Missile extends Ship {
 	constructor(xPos, yPos) {
 		let speed = 20;
-		let turnSpeed = 5;
+		let turnSpeed = 3;
 		let missileColor = "#F00";
 		super(xPos, yPos, speed, turnSpeed, missileColor);
 	}
@@ -104,7 +107,7 @@ class Missile extends Ship {
 
 class Player extends Ship {
 	constructor(xPos, yPos) {
-		let speed = 10;
+		let speed = 15;
 		let turnSpeed = 5;
 		let playerColor = "#000";
 		super(xPos, yPos, speed, turnSpeed, playerColor);
@@ -139,6 +142,24 @@ function perpRight(vector) {
 	return {x: -vector.y, y: vector.x};
 }
 
+function spawnMissile() {
+	//pick a random corner:
+	let topBottom = Math.floor(Math.random() * 2);
+	let rightLeft = Math.floor(Math.random() * 2); 
+	let x, y;
+	if (topBottom === 0) {
+		x = Math.floor(canvasW * 0.05);
+	} else {
+		x = Math.floor(canvasW * 0.95);
+	}
+	if (rightLeft === 0) {
+		y = Math.floor(canvasH * 0.05);
+	} else {
+		y = Math.floor(canvasH * 0.95);
+	}
+	missileArray.push(new Missile(x, y));
+}
+
 function gameLoop() {
 	if (player.isAlive) {
 		window.requestAnimationFrame(gameLoop);
@@ -150,12 +171,20 @@ function gameLoop() {
 	delta = (currentTime - lastTime) / 1000; 
 	lastTime = currentTime;
 
+	// Spawn missile every 10 seconds
+
 	clrScrn();
 	player.draw();
 	if (typeof mousePos !== 'undefined') {
 		player.updatePosition(delta);
 		player.updateVelocity(delta);
 		player.updateAcceleration(mousePos);
+	}
+	for (let missile of missileArray) {
+		missile.draw();
+		missile.updatePosition(delta);
+		missile.updateVelocity(delta);
+		missile.updateAcceleration(player.position);
 	}
 }
 
@@ -177,13 +206,20 @@ function handleMouseDown (evt) {
 }
 
 function startGame() {
-	document.getElementById('start_button').style.display = 'none';
+	startTime = (new Date()).getTime();
+	lastTime = startTime;
+
 	player = new Player(canvasW/2, canvasH/2);
+	missileArray = [];
+	spawnMissile();
+
 	canvas.addEventListener('mousemove', handleMouseMove, false);
 	canvas.addEventListener('mousedown', handleMouseDown);
+
 	if (typeof (canvas.getContext) !== 'undefined') {
 		window.requestAnimationFrame(gameLoop);
 	}
+	document.getElementById('start_button').style.display = 'none';
 }
 
 function endGame() {
