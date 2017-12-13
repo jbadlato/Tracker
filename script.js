@@ -19,10 +19,6 @@ var mousPos;
 
 var p;
 
-function clrScrn() {
-	ctx.clearRect(0, 0, canvas.width, canvas.height);
-}
-
 class Player {
 	constructor(xPos, yPos) {
 		this.isAlive = true;
@@ -58,6 +54,10 @@ class Player {
 	}
 }
 
+function clrScrn() {
+	ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
 function gameLoop() {
 	if (p.isAlive) {
 		window.requestAnimationFrame(gameLoop);
@@ -71,7 +71,9 @@ function gameLoop() {
 
 	clrScrn();
 	p.draw();
-	p.updateVelocity(mousePos);
+	if (typeof mousePos !== 'undefined') {
+		p.updateVelocity(mousePos);
+	}
 	p.move(delta);
 }
 
@@ -97,8 +99,8 @@ function startGame() {
 	p = new Player(canvasW/2, canvasH/2);
 	canvas.addEventListener('mousemove', handleMouseMove, false);
 	canvas.addEventListener('mousedown', handleMouseDown);
-	if (typeof (canvas.getContext) !== undefined) {
-		gameLoop();
+	if (typeof (canvas.getContext) !== 'undefined') {
+		window.requestAnimationFrame(gameLoop);
 	}
 }
 
