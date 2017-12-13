@@ -11,46 +11,110 @@ var canvasW = canvas.width;
 var canvasH = canvas.height;
 var ctx = canvas.getContext("2d");
 
-var lastTime = (new Date()).getTime();
-var currentTime = 0;
-var delta = 0;
+var startTime; 
+var lastTime;
+var currentTime;
+var delta;
 
 var mousPos;
 
-var p;
+var player;
 
-class Player {
-	constructor(xPos, yPos) {
+class Ship {
+	constructor(xPos, yPos, speed, turnSpeed, color) {
 		this.isAlive = true;
 		this.position = {
-			x: xPos, 
+			x: xPos,
 			y: yPos
-		}
-		this.speed = 50;
+		};
+		this.speed = speed;
 		this.velocity = {
 			x: 0,
 			y: 0
+		};
+		this.turnSpeed = turnSpeed;
+		this.acceleration = {
+			x: 0,
+			y: 0
 		}
+		this.color = color;
+	}
+	updateAcceleration (target) {
+		// check that ship is already moving
+		if (this.velocity.x === 0 && this.velocity.y === 0) {
+			let xDiff = target.x - this.position.x;
+			let yDiff = target.y - this.position.y;
+			//normalize to velocity of 1:
+			let newVelY = yDiff / Math.sqrt( xDiff*xDiff + yDiff*yDiff );
+			let newVelX = xDiff / Math.sqrt( xDiff*xDiff + yDiff*yDiff );
+			this.velocity.x = newVelX;
+			this.velocity.y = newVelY;
+			return;
+		}
+		// check if need to turn left or right to point towards target:
+		let a = this.position;
+		let b = {
+			x: this.position.x + this.velocity.x,
+			y: this.position.y + this.velocity.y
+		};
+		let direct = leftOrRight(a, b, target);
+		switch (direct) {
+			case 1: // target is to the right
+				this.acceleration = perpRight(this.velocity);
+				break;
+			case -1: // target is to the left
+				this.acceleration = perpLeft(this.velocity);
+				break;
+			case 0: // target is directly ahead or behind
+			case -0: 
+				this.acceleration = {x: 0, y: 0};
+				break;
+			case NaN: 
+				console.log('Error updating Acceleration');
+		}
+	}
+	updateVelocity (delta) {
+		this.velocity.x += this.turnSpeed*this.acceleration.x*delta;
+		this.velocity.y += this.turnSpeed*this.acceleration.y*delta;
+		let vel = Math.sqrt(this.velocity.x*this.velocity.x + this.velocity.y*this.velocity.y);
+		this.velocity.x *= this.speed / vel;
+		this.velocity.y *= this.speed / vel;
+	}
+	updatePosition(delta) {
+		this.position.x += this.speed*this.velocity.x*delta + 0.5*this.turnSpeed*this.acceleration.x*delta*delta;
+		this.position.y += this.speed*this.velocity.y*delta + 0.5*this.turnSpeed*this.acceleration.y*delta*delta;
+	}
+}
+
+class Missile extends Ship {
+	constructor(xPos, yPos) {
+		let speed = 20;
+		let turnSpeed = 5;
+		let missileColor = "#F00";
+		super(xPos, yPos, speed, turnSpeed, missileColor);
 	}
 	draw () {
 		ctx.beginPath();
 		ctx.arc(this.position.x, this.position.y, 3, 0, 2*Math.PI);
-		ctx.fillStyle = "#000";
+		ctx.fillStyle = this.color;
 		ctx.fill();
 		ctx.stroke();
 	}
-	updateVelocity (pos) {
-		let xDiff = pos.x - this.position.x;
-		let yDiff = pos.y - this.position.y;
-		//normalize to velocity of 1:
-		let newVelY = this.speed * yDiff / Math.sqrt( xDiff*xDiff + yDiff*yDiff );
-		let newVelX = this.speed * xDiff / Math.sqrt( xDiff*xDiff + yDiff*yDiff );
-		this.velocity.x = newVelX;
-		this.velocity.y = newVelY;
+}
+
+class Player extends Ship {
+	constructor(xPos, yPos) {
+		let speed = 10;
+		let turnSpeed = 5;
+		let playerColor = "#000";
+		super(xPos, yPos, speed, turnSpeed, playerColor);
 	}
-	move(delta) {
-		this.position.x += this.velocity.x * delta;
-		this.position.y += this.velocity.y * delta;
+	draw () {
+		ctx.beginPath();
+		ctx.arc(this.position.x, this.position.y, 5, 0, 2*Math.PI);
+		ctx.fillStyle = this.color;
+		ctx.fill();
+		ctx.stroke();
 	}
 }
 
@@ -58,8 +122,25 @@ function clrScrn() {
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
+function leftOrRight(a, b, c) {
+	// Checks to see if point c is left or right of the vector AB
+	// makes use of 2d cross product of AB and AC.
+	// +1 is right, -1 is left, 0 is on the vector.
+	return Math.sign(((b.x - a.x)*(c.y - a.y) - (b.y - a.y)*(c.x - a.x)));
+}
+
+function perpLeft(vector) {
+	// returns perpendicular vector to the left (counter-clockwise)
+	return {x: vector.y, y: -vector.x};
+}
+
+function perpRight(vector) {
+	// returns perpendicular vector to the right (clockwise)
+	return {x: -vector.y, y: vector.x};
+}
+
 function gameLoop() {
-	if (p.isAlive) {
+	if (player.isAlive) {
 		window.requestAnimationFrame(gameLoop);
 	} else {
 		endGame();
@@ -70,11 +151,12 @@ function gameLoop() {
 	lastTime = currentTime;
 
 	clrScrn();
-	p.draw();
+	player.draw();
 	if (typeof mousePos !== 'undefined') {
-		p.updateVelocity(mousePos);
+		player.updatePosition(delta);
+		player.updateVelocity(delta);
+		player.updateAcceleration(mousePos);
 	}
-	p.move(delta);
 }
 
 function getMousePos(canvas, evt) {
@@ -87,16 +169,16 @@ function getMousePos(canvas, evt) {
 
 function handleMouseMove (evt) {
 	mousePos = getMousePos(canvas, evt);
-	p.updateVelocity(mousePos);
+	player.updateAcceleration(mousePos);
 }
 
 function handleMouseDown (evt) {
-	p.isAlive = false;
+	player.isAlive = false; // artificial way to die/end the game for now
 }
 
 function startGame() {
 	document.getElementById('start_button').style.display = 'none';
-	p = new Player(canvasW/2, canvasH/2);
+	player = new Player(canvasW/2, canvasH/2);
 	canvas.addEventListener('mousemove', handleMouseMove, false);
 	canvas.addEventListener('mousedown', handleMouseDown);
 	if (typeof (canvas.getContext) !== 'undefined') {
