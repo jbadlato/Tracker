@@ -22,7 +22,7 @@ var player;
 var missileArray;
 
 class Ship {
-	constructor(xPos, yPos, speed, turnSpeed, color) {
+	constructor(xPos, yPos, speed, turnSpeed) {
 		this.isAlive = true;
 		this.position = {
 			x: xPos,
@@ -38,7 +38,6 @@ class Ship {
 			x: 0,
 			y: 0
 		}
-		this.color = color;
 	}
 	updateAcceleration (target) {
 		// check that ship is already moving
@@ -93,12 +92,13 @@ class Missile extends Ship {
 	constructor(xPos, yPos) {
 		let speed = 20;
 		let turnSpeed = 3;
-		let missileColor = "#F00";
-		super(xPos, yPos, speed, turnSpeed, missileColor);
+		super(xPos, yPos, speed, turnSpeed);
+		this.color = "#F00";
+		this.radius = 3;
 	}
 	draw () {
 		ctx.beginPath();
-		ctx.arc(this.position.x, this.position.y, 3, 0, 2*Math.PI);
+		ctx.arc(this.position.x, this.position.y, this.radius, 0, 2*Math.PI);
 		ctx.fillStyle = this.color;
 		ctx.fill();
 		ctx.stroke();
@@ -108,13 +108,14 @@ class Missile extends Ship {
 class Player extends Ship {
 	constructor(xPos, yPos) {
 		let speed = 15;
-		let turnSpeed = 5;
-		let playerColor = "#000";
-		super(xPos, yPos, speed, turnSpeed, playerColor);
+		let turnSpeed = 10;
+		super(xPos, yPos, speed, turnSpeed);
+		this.color = "#000";
+		this.radius = 5;
 	}
 	draw () {
 		ctx.beginPath();
-		ctx.arc(this.position.x, this.position.y, 5, 0, 2*Math.PI);
+		ctx.arc(this.position.x, this.position.y, this.radius, 0, 2*Math.PI);
 		ctx.fillStyle = this.color;
 		ctx.fill();
 		ctx.stroke();
@@ -160,11 +161,41 @@ function spawnMissile() {
 	missileArray.push(new Missile(x, y));
 }
 
+function getDistance (a, b) {
+	return Math.sqrt((a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y));
+}
+
+function checkForCollisions () {
+	for (let missile of missileArray) {
+		if (getDistance(player.position, missile.position) < (player.radius + missile.radius)) {
+			player.isAlive = false;
+		}
+	}
+	for (let i = 0; i < missileArray.length; i++) {
+		for (let j = i+1; j < missileArray.length; j++) {
+			let missileA = missileArray[i];
+			let missileB = missileArray[j];
+			if (getDistance(missileA.position, missileB.position) < (missileA.radius + missileB.radius)) {
+				missileA.isAlive = false;
+				missileB.isAlive = false;
+			}
+		}
+	}
+}
+
 function gameLoop() {
+	checkForCollisions();
+	// Check to see what is still alive:
 	if (player.isAlive) {
 		window.requestAnimationFrame(gameLoop);
 	} else {
 		endGame();
+	}
+	for (let i = 0; i < missileArray.length; i++) {
+		let missile = missileArray[i];
+		if (!missile.isAlive) {
+			missileArray.splice(i, 1);
+		}
 	}
 
 	currentTime = (new Date()).getTime();
