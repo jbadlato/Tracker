@@ -86,6 +86,11 @@ class Ship {
 	updatePosition(delta) {
 		this.position.x += this.speed*this.velocity.x*delta + 0.5*this.turnSpeed*this.acceleration.x*delta*delta;
 		this.position.y += this.speed*this.velocity.y*delta + 0.5*this.turnSpeed*this.acceleration.y*delta*delta;
+		// make sure position is still within canvas:
+		if (this.position.x > canvasW - this.radius || this.position.x < 0 + this.radius 
+			|| this.position.y > canvasH - this.radius || this.position.y < 0 + this.radius) {
+			this.isAlive = false;
+		}
 	}
 }
 
