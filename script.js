@@ -100,7 +100,7 @@ class Missile extends Ship {
 		let turnSpeed = 3;
 		super(xPos, yPos, speed, turnSpeed);
 		this.color = "#F00";
-		this.radius = 3;
+		this.radius = 10;
 	}
 	draw () {
 		ctx.beginPath();
@@ -249,9 +249,9 @@ function startGame() {
 	player = new Player(canvasW/2, canvasH/2);
 	missileArray = [];
 	spawnMissile();
-	missileSpawner = setInterval(function(){ // spawn new missile every 10 seconds
+	missileSpawner = setInterval(function(){ // spawn new missile every 5 seconds
 		spawnMissile();
-	}, 10000)
+	}, 5000)
 
 	canvas.addEventListener('mousemove', handleMouseMove, false);
 	canvas.addEventListener('mousedown', handleMouseDown);
