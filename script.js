@@ -20,6 +20,7 @@ var mousPos;
 
 var player;
 var missileArray;
+var missileSpawner;
 
 class Ship {
 	constructor(xPos, yPos, speed, turnSpeed) {
@@ -243,6 +244,9 @@ function startGame() {
 	player = new Player(canvasW/2, canvasH/2);
 	missileArray = [];
 	spawnMissile();
+	missileSpawner = setInterval(function(){ // spawn new missile every 10 seconds
+		spawnMissile();
+	}, 10000)
 
 	canvas.addEventListener('mousemove', handleMouseMove, false);
 	canvas.addEventListener('mousedown', handleMouseDown);
@@ -254,6 +258,7 @@ function startGame() {
 }
 
 function endGame() {
+	clearInterval(missileSpawner);
 	canvas.removeEventListener('mousemove', handleMouseMove, false);
 	canvas.removeEventListener('mousedown', handleMouseDown);
 	delete mousePos;
