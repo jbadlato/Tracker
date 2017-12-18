@@ -198,6 +198,7 @@ function checkForCollisions () {
 function updateScore() {
 	ctx.font = "50px Arial";
 	ctx.fillStyle = "#CCC";
+	ctx.textAlign = "center";
 	ctx.fillText(score.toString(),canvasW/2,canvasH/2);
 }
 
@@ -278,11 +279,20 @@ function startGame() {
 }
 
 function endGame() {
+	// reinitialize everything:
 	clearInterval(missileSpawner);
 	clearInterval(scoreIncrement);
 	canvas.removeEventListener('mousemove', handleMouseMove, false);
 	canvas.removeEventListener('mousedown', handleMouseDown);
 	delete mousePos;
 	score = 0;
+
+	// Draw "Game Over":
+	ctx.font = "75px Georgia";
+	ctx.fillStyle = "#E00";
+	ctx.textAlign = "center";
+	ctx.fillText("GAME OVER",canvasW/2,canvasH/4);
+
+	// Show start button for next game:
 	document.getElementById('start_button').style.display = 'inline';
 }
