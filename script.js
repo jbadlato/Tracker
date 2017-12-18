@@ -21,6 +21,8 @@ var mousPos;
 var player;
 var missileArray;
 var missileSpawner;
+var scoreIncrement;
+var score = 0;
 
 class Ship {
 	constructor(xPos, yPos, speed, turnSpeed) {
@@ -86,11 +88,13 @@ class Ship {
 	updatePosition(delta) {
 		this.position.x += this.speed*this.velocity.x*delta + 0.5*this.turnSpeed*this.acceleration.x*delta*delta;
 		this.position.y += this.speed*this.velocity.y*delta + 0.5*this.turnSpeed*this.acceleration.y*delta*delta;
+		/*
 		// make sure position is still within canvas:
 		if (this.position.x > canvasW - this.radius || this.position.x < 0 + this.radius 
 			|| this.position.y > canvasH - this.radius || this.position.y < 0 + this.radius) {
 			this.isAlive = false;
 		}
+		*/
 	}
 }
 
@@ -99,13 +103,14 @@ class Missile extends Ship {
 		let speed = 20;
 		let turnSpeed = 3;
 		super(xPos, yPos, speed, turnSpeed);
-		this.color = "#F00";
-		this.radius = 10;
+		this.color = "#F22";
+		this.radius = 3;
 	}
 	draw () {
 		ctx.beginPath();
 		ctx.arc(this.position.x, this.position.y, this.radius, 0, 2*Math.PI);
 		ctx.fillStyle = this.color;
+		ctx.strokeStyle = this.color;
 		ctx.fill();
 		ctx.stroke();
 	}
@@ -123,6 +128,7 @@ class Player extends Ship {
 		ctx.beginPath();
 		ctx.arc(this.position.x, this.position.y, this.radius, 0, 2*Math.PI);
 		ctx.fillStyle = this.color;
+		ctx.strokeStyle = this.color;
 		ctx.fill();
 		ctx.stroke();
 	}
@@ -189,21 +195,14 @@ function checkForCollisions () {
 	}
 }
 
+function updateScore() {
+	ctx.font = "50px Arial";
+	ctx.fillStyle = "#CCC";
+	ctx.fillText(score.toString(),canvasW/2,canvasH/2);
+}
+
 function gameLoop() {
 	checkForCollisions();
-	// Check to see what is still alive:
-	if (player.isAlive) {
-		window.requestAnimationFrame(gameLoop);
-	} else {
-		endGame();
-	}
-	for (let i = 0; i < missileArray.length; i++) {
-		let missile = missileArray[i];
-		if (!missile.isAlive) {
-			missileArray.splice(i, 1);
-		}
-	}
-
 	currentTime = (new Date()).getTime();
 	delta = (currentTime - lastTime) / 1000; 
 	lastTime = currentTime;
@@ -211,6 +210,7 @@ function gameLoop() {
 	// Spawn missile every 10 seconds
 
 	clrScrn();
+	updateScore();
 	player.draw();
 	if (typeof mousePos !== 'undefined') {
 		player.updatePosition(delta);
@@ -222,6 +222,20 @@ function gameLoop() {
 		missile.updatePosition(delta);
 		missile.updateVelocity(delta);
 		missile.updateAcceleration(player.position);
+	}
+
+	// Check to see what is still alive:
+	if (player.isAlive) {
+		window.requestAnimationFrame(gameLoop);
+	} else {
+		endGame();
+	}
+	for (let i = 0; i < missileArray.length; i++) {
+		let missile = missileArray[i];
+		if (!missile.isAlive) {
+			score += 100;
+			missileArray.splice(i, 1);
+		}
 	}
 }
 
@@ -239,7 +253,7 @@ function handleMouseMove (evt) {
 }
 
 function handleMouseDown (evt) {
-	player.isAlive = false; // artificial way to die/end the game for now
+	//player.isAlive = false; // artificial way to die/end the game for now
 }
 
 function startGame() {
@@ -249,9 +263,10 @@ function startGame() {
 	player = new Player(canvasW/2, canvasH/2);
 	missileArray = [];
 	spawnMissile();
-	missileSpawner = setInterval(function(){ // spawn new missile every 5 seconds
-		spawnMissile();
-	}, 5000)
+	missileSpawner = setInterval(spawnMissile, 5000); // Spawns missile every 5 seconds
+	scoreIncrement = setInterval(function(){ // Adds one to score every half second
+		score += 1;
+	}, 500);
 
 	canvas.addEventListener('mousemove', handleMouseMove, false);
 	canvas.addEventListener('mousedown', handleMouseDown);
@@ -264,8 +279,10 @@ function startGame() {
 
 function endGame() {
 	clearInterval(missileSpawner);
+	clearInterval(scoreIncrement);
 	canvas.removeEventListener('mousemove', handleMouseMove, false);
 	canvas.removeEventListener('mousedown', handleMouseDown);
 	delete mousePos;
+	score = 0;
 	document.getElementById('start_button').style.display = 'inline';
 }
