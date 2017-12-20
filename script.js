@@ -19,7 +19,8 @@ var delta;
 var mousPos;
 
 var player;
-var missileArray;
+var bulletArray = [];
+var missileArray = [];
 var missileSpawner;
 var scoreIncrement;
 var score = 0;
@@ -134,6 +135,37 @@ class Player extends Ship {
 	}
 }
 
+class Bullet extends Ship {
+	constructor(xPos, yPos, xVel, yVel) {
+		let speed = 30;
+		let turnSpeed = 0;
+		super(xPos, yPos, speed, turnSpeed);
+		this.color = "#000000";
+		this.velocity = {
+			x: xVel,
+			y: yVel
+		};
+		this.length = 8;
+		this.radius = 4; // for hit box (circle)
+	}
+	draw () {
+		let vel = Math.sqrt(this.velocity.x * this.velocity.x + this.velocity.y * this.velocity.y);
+		let startPoint = {
+			x: this.position.x - this.length * this.velocity.x / vel,
+			y: this.position.y - this.length * this.velocity.y / vel
+		};
+		let endPoint = {
+			x: this.position.x,
+			y: this.position.y
+		};
+		ctx.beginPath();
+		ctx.moveTo(startPoint.x, startPoint.y);
+		ctx.lineTo(endPoint.x, endPoint.y);
+		ctx.strokeStyle = this.color;
+		ctx.stroke();
+	}
+}
+
 function clrScrn() {
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
@@ -173,16 +205,22 @@ function spawnMissile() {
 	missileArray.push(new Missile(x, y));
 }
 
+function spawnBullet() {
+	bulletArray.push(new Bullet(player.position.x, player.position.y, player.velocity.x, player.velocity.y));
+}
+
 function getDistance (a, b) {
 	return Math.sqrt((a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y));
 }
 
 function checkForCollisions () {
+	// Player-Missile Collision:
 	for (let missile of missileArray) {
 		if (getDistance(player.position, missile.position) < (player.radius + missile.radius)) {
 			player.isAlive = false;
 		}
 	}
+	// Missile-Missile Collision:
 	for (let i = 0; i < missileArray.length; i++) {
 		for (let j = i+1; j < missileArray.length; j++) {
 			let missileA = missileArray[i];
@@ -191,6 +229,21 @@ function checkForCollisions () {
 				missileA.isAlive = false;
 				missileB.isAlive = false;
 			}
+		}
+	}
+	// Missile-Bullet Collision:
+	for (let missile of missileArray) {
+		for (let bullet of bulletArray) {
+			if (getDistance(missile.position, bullet.position) < (missile.radius + bullet.radius)) {
+				missile.isAlive = false;
+			}
+		}
+	}
+	// Bullet-Wall Collision:
+	for (let bullet of bulletArray) {
+		if (bullet.position.x < 0 || bullet.position.x > canvasW
+			|| bullet.position.y < 0 || bullet.position.y > canvasH) {
+
 		}
 	}
 }
@@ -224,6 +277,12 @@ function gameLoop() {
 		missile.updateVelocity(delta);
 		missile.updateAcceleration(player.position);
 	}
+	for (let bullet of bulletArray) {
+		bullet.draw();
+		bullet.updatePosition(delta);
+		bullet.updateVelocity(delta);
+		// no update to acceleration because bullets move in straight lines.
+	}
 
 	// Check to see what is still alive:
 	if (player.isAlive) {
@@ -236,6 +295,12 @@ function gameLoop() {
 		if (!missile.isAlive) {
 			score += 100;
 			missileArray.splice(i, 1);
+		}
+	}
+	for (let i = 0; i < bulletArray.length; i++) {
+		let bullet = bulletArray[i];
+		if (!bullet.isAlive) {
+			bulletArray.splice(i, 1);
 		}
 	}
 }
@@ -255,6 +320,7 @@ function handleMouseMove (evt) {
 
 function handleMouseDown (evt) {
 	//player.isAlive = false; // artificial way to die/end the game for now
+	spawnBullet();
 }
 
 function startGame() {
