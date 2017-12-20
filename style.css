@@ -1,8 +1,17 @@
 body {
 	text-align: center;
+	background-color: #333;
 }
 
 canvas {
 	border: 2px solid;
+	border-radius: 10px;
 	display: inline-block;
+	background-color: #EEE;
+}
+
+button {
+	font-family: 'Georgia';
+	border-radius: 5px;
+	background-color: #EEE;
 }
