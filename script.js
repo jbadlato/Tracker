@@ -19,8 +19,8 @@ var delta;
 var mousPos;
 
 var player;
-var bulletArray = [];
-var missileArray = [];
+var bulletArray;
+var missileArray;
 var missileSpawner;
 var scoreIncrement;
 var score = 0;
@@ -104,7 +104,7 @@ class Missile extends Ship {
 		let speed = 20;
 		let turnSpeed = 3;
 		super(xPos, yPos, speed, turnSpeed);
-		this.color = "#F22";
+		this.color = "#C11";
 		this.radius = 3;
 	}
 	draw () {
@@ -328,6 +328,7 @@ function startGame() {
 	lastTime = startTime;
 
 	player = new Player(canvasW/2, canvasH/2);
+	bulletArray = [];
 	missileArray = [];
 	spawnMissile();
 	missileSpawner = setInterval(spawnMissile, 5000); // Spawns missile every 5 seconds
@@ -335,6 +336,9 @@ function startGame() {
 		score += 1;
 	}, 500);
 
+	canvas.onmousedown = function(){ // Prevents highlighting web page on double click.
+		return false;
+	};
 	canvas.addEventListener('mousemove', handleMouseMove, false);
 	canvas.addEventListener('mousedown', handleMouseDown);
 
